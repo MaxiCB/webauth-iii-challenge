@@ -47,6 +47,7 @@ router.post("/register", validateFields, (req, res) => {
 
 router.post('/login', (req, res) => {
   let { username, password } = req.body;
+  let test = req.headers
 
   Users.findBy({ username })
     .first()
@@ -59,6 +60,7 @@ router.post('/login', (req, res) => {
         res.status(200).json({
           message: `Welcome ${user.username}!, have a token...`,
           token, // attach the token as part of the response
+          test
         });
       } else {
         res.status(401).json({ message: 'Invalid Credentials' });

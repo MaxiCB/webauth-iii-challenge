@@ -1,5 +1,7 @@
 const Users = require("../users/user-model");
 const bcrypt = require("bcryptjs");
+const jwt = require('jsonwebtoken');
+const secrets = require("../config/secrets")
 
 function restricted(req, res, next) {
   const { username, password } = req.headers;
@@ -32,7 +34,8 @@ function validateFields(req, res, next) {
 }
 
 function protected(req, res, next) {
-  if (req.session && req.session.name) {
+  const { token } = req.body;
+  if (jwt.verify(token, secrets.jwtSecret)) {
     next();
   } else {
     res.status(401).json({ message: 'you shall not pass!!' });
