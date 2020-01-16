@@ -37,6 +37,7 @@ function protected(req, res, next) {
   const { token } = req.body;
   if (jwt.verify(token, secrets.jwtSecret)) {
     next();
+    
   } else {
     res.status(401).json({ message: 'you shall not pass!!' });
   }

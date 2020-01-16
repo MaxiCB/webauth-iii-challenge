@@ -1,12 +1,19 @@
 const db = require("../data/dbConfig")
-const bcrypt = require("bcryptjs");
 
 const getUsers = () => {
     return db("users")
 }
 
+const findByDepartment = department => {
+    return db("users").where({department})
+}
+
+const findByID = id => {
+    return db("users").where({id});
+}
+
 const findBy = username => {
-    return db("users").where(username);
+    return db("users").where({username})
 }
 
 const registerUser = user => {
@@ -15,6 +22,8 @@ const registerUser = user => {
 
 module.exports = {
     getUsers,
+    findByID,
     findBy,
+    findByDepartment,
     registerUser
 }

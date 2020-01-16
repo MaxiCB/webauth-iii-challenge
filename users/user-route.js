@@ -1,7 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require('jsonwebtoken');
-
 const secrets = require("../config/secrets")
 
 const router = express.Router();
@@ -10,15 +9,22 @@ const Users = require("./user-model");
 
 const { restricted, validateFields, protected } = require("../middleware/user-middleware");
 
-router.get("/", (req, res) => {
-  Users.getUsers()
-    .then(users => res.status(200).json(users))
+router.get("/", protected, (req, res) => {
+  const { token } = req.body;
+  var decoded = jwt.decode(token);
+
+  Users.findBy(decoded.username)
+    .then(user => {
+      res.send(user)
+    })
     .catch(err => res.status(400).json(err));
 });
 
-router.get("/users", protected, (req, res) => {
-  Users.getUsers()
-    .then(users => res.status(200).json(users))
+router.get("/users/:id", protected, (req, res) => {
+  const { id } = req.params;
+
+  Users.findByID(id)
+    .then(user => res.status(200).json(user))
     .catch(err => res.status(400).json(err));
 });
 
@@ -47,20 +53,16 @@ router.post("/register", validateFields, (req, res) => {
 
 router.post('/login', (req, res) => {
   let { username, password } = req.body;
-  let test = req.headers
 
   Users.findBy({ username })
     .first()
     .then(user => {
       if (user && bcrypt.compareSync(password, user.password)) {
-        const token = generateToken(user); // new line
+        const token = generateToken(user);
  
-        // the server needs to return the token to the client
-        // this doesn't happen automatically like it happens with cookies
         res.status(200).json({
           message: `Welcome ${user.username}!, have a token...`,
-          token, // attach the token as part of the response
-          test
+          token,
         });
       } else {
         res.status(401).json({ message: 'Invalid Credentials' });
@@ -73,17 +75,15 @@ router.post('/login', (req, res) => {
 
 function generateToken(user) {
   const payload = {
-    subject: user.id, // sub in payload is what the token is about
+    subject: user.id, 
     username: user.username,
-    // ...otherData
   };
 
   const options = {
-    expiresIn: '1d', // show other available options in the library's documentation
+    expiresIn: '1d',
   };
 
-  // extract the secret away so it can be required and used where needed
-  return jwt.sign(payload, secrets.jwtSecret, options); // this method is synchronous
+  return jwt.sign(payload, secrets.jwtSecret, options);
 }
 
 module.exports = router;
