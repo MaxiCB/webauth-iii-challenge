@@ -7,23 +7,13 @@ const router = express.Router();
 
 const Users = require("./user-model");
 
-const { restricted, validateFields, protected } = require("../middleware/user-middleware");
+const { validateFields, protected, restricted } = require("../middleware/user-middleware");
 
 router.get("/", protected, (req, res) => {
   const { token } = req.body;
   var decoded = jwt.decode(token);
 
-  Users.findBy(decoded.username)
-    .then(user => {
-      res.send(user)
-    })
-    .catch(err => res.status(400).json(err));
-});
-
-router.get("/users/:id", protected, (req, res) => {
-  const { id } = req.params;
-
-  Users.findByID(id)
+  Users.findByDepartment(decoded.department)
     .then(user => res.status(200).json(user))
     .catch(err => res.status(400).json(err));
 });
@@ -51,22 +41,18 @@ router.post("/register", validateFields, (req, res) => {
     .catch(err => res.status(400).json(err));
 });
 
-router.post('/login', (req, res) => {
-  let { username, password } = req.body;
+router.post('/login', restricted, (req, res) => {
+  let { username } = req.headers;
 
-  Users.findBy({ username })
+  Users.findBy(username)
     .first()
     .then(user => {
-      if (user && bcrypt.compareSync(password, user.password)) {
         const token = generateToken(user);
  
         res.status(200).json({
           message: `Welcome ${user.username}!, have a token...`,
           token,
         });
-      } else {
-        res.status(401).json({ message: 'Invalid Credentials' });
-      }
     })
     .catch(error => {
       res.status(500).json(error);
@@ -77,6 +63,7 @@ function generateToken(user) {
   const payload = {
     subject: user.id, 
     username: user.username,
+    department: user.department
   };
 
   const options = {
